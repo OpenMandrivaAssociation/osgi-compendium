@@ -5,7 +5,7 @@ Version:        6.0.0
 Release:        4.1
 Summary:        Interfaces and Classes for use in compiling OSGi bundles
 License:        ASL 2.0
-URL:            http://www.osgi.org
+URL:            https://www.osgi.org
 BuildArch:      noarch
 
 Source0:        https://osgi.org/download/r6/osgi.cmpn-%{version}.jar
