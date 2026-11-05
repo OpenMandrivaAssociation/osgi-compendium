@@ -24,7 +24,13 @@ provides javax.microedition or javax.persistence, and no package here
 imports those classes.
 
 %prep
-%setup -q -c
+%setup -q -c -T
+# The builders' rpmuncompress passes a sources jar to tar.
+python - %{SOURCE0} <<'PY'
+import sys
+import zipfile
+zipfile.ZipFile(sys.argv[1]).extractall(".")
+PY
 mkdir -p src/main/java
 mv org src/main/java/
 # Connector Service is J2ME. The JPA helper needs javax.persistence.
