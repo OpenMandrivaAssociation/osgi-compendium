@@ -1,100 +1,67 @@
-%{?_javapackages_macros:%_javapackages_macros}
-
-Name:           osgi-compendium
-Version:        6.0.0
-Release:        4.1
-Summary:        Interfaces and Classes for use in compiling OSGi bundles
-License:        ASL 2.0
-URL:            https://www.osgi.org
-BuildArch:      noarch
-
-Source0:        https://osgi.org/download/r6/osgi.cmpn-%{version}.jar
-
-BuildRequires:  maven-local
-BuildRequires:  mvn(javax.persistence:persistence-api)
-BuildRequires:  mvn(javax.servlet:javax.servlet-api)
-BuildRequires:  mvn(org.apache.felix:maven-bundle-plugin)
-BuildRequires:  mvn(org.osgi:osgi.annotation)
-BuildRequires:  mvn(org.osgi:osgi.core)
-
+Name:		osgi-compendium
+Version:	6.0.0
+Release:	4.1
+Summary:	OSGi Compendium API
+Group:		Development/Java
+License:	ASL 2.0
+URL:		https://www.osgi.org/
+# Sources jar. The previous lookaside was the binary cmpn jar.
+Source0:	https://repo1.maven.org/maven2/org/osgi/osgi.cmpn/%{version}/osgi.cmpn-%{version}-sources.jar
+BuildArch:	noarch
+BuildRequires:	python
+BuildRequires:	maven
+BuildRequires:	java-current-devel
+BuildRequires:	osgi-core
+BuildRequires:	mvn(org.osgi:org.osgi.annotation.versioning)
+BuildRequires:	mvn(javax.servlet:javax.servlet-api)
+BuildSystem:	maven
+BuildOption(install):	--file-name %{name} --alias org.osgi:org.osgi.compendium
 
 %description
-OSGi Compendium, Interfaces and Classes for use in compiling bundles.
-
-
-%package javadoc
-Summary:        API documentation for %{name}
-
-%description javadoc
-This package provides %{summary}.
-
+OSGi Compendium Release 6 service interfaces. The J2ME Connector Service
+and the JPA EntityManager factory are left out: nothing in cooker
+provides javax.microedition or javax.persistence, and no package here
+imports those classes.
 
 %prep
 %setup -q -c
-
-rm -r org
-find -name '*.class' -delete
-
-mkdir -p src/main/{java,resources}
-mv OSGI-OPT/src/org src/main/java/
-mv xmlns src/main/resources
-
-# J2ME stuff
-rm -r src/main/java/org/osgi/service/io
-
-mv META-INF/maven/org.osgi/osgi.cmpn/pom.xml .
-
-%pom_xpath_inject pom:project '
-<packaging>bundle</packaging>
-<properties>
-  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-</properties>
-<build>
-  <plugins>
-    <plugin>
-      <groupId>org.apache.felix</groupId>
-      <artifactId>maven-bundle-plugin</artifactId>
-      <extensions>true</extensions>
-      <configuration>
-        <instructions>
-          <Bundle-Name>${project.artifactId}</Bundle-Name>
-          <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-        </instructions>
-      </configuration>
-    </plugin>
-  </plugins>
-</build>'
-
-%pom_add_dep org.osgi:osgi.annotation::provided
-%pom_add_dep org.osgi:osgi.core::provided
-%pom_add_dep javax.servlet:javax.servlet-api::provided
-%pom_add_dep javax.persistence:persistence-api::provided
-
-%build
-%mvn_build
-
-%install
-%mvn_install
-
+mkdir -p src/main/java
+mv org src/main/java/
+# Connector Service is J2ME. The JPA helper needs javax.persistence.
+rm -rf src/main/java/org/osgi/service/io src/main/java/org/osgi/service/jpa
+python - %{version} <<'PY'
+import sys
+from pathlib import Path
+version = sys.argv[1]
+Path("pom.xml").write_text(f"""<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.osgi</groupId>
+  <artifactId>osgi.cmpn</artifactId>
+  <version>{version}</version>
+  <packaging>jar</packaging>
+  <name>OSGi Compendium</name>
+  <dependencies>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>osgi.core</artifactId>
+      <version>{version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.annotation.versioning</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+</project>
+""")
+PY
 
 %files -f .mfiles
-%doc LICENSE
-%doc about.html
-
-%files javadoc -f .mfiles-javadoc
-%doc LICENSE
-
-
-%changelog
-* Thu Jul 27 2017 Fedora Release Engineering <releng@fedoraproject.org> - 6.0.0-4
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Mass_Rebuild
-
-* Sat Feb 11 2017 Fedora Release Engineering <releng@fedoraproject.org> - 6.0.0-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
-
-* Mon Oct 10 2016 Mikolaj Izdebski <mizdebsk@redhat.com> - 6.0.0-2
-- Fix scopes of injected Maven dependencies
-
-* Mon Oct 12 2015 Michael Simacek <msimacek@redhat.com> - 6.0.0-1
-- Initial packaging
-
+%doc LICENSE about.html
