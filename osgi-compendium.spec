@@ -14,6 +14,9 @@ BuildRequires:	java-current-devel
 BuildRequires:	osgi-core
 BuildRequires:	mvn(org.osgi:org.osgi.annotation.versioning)
 BuildRequires:	mvn(javax.servlet:javax.servlet-api)
+# servlet-api 4.0.1 parents net.java:jvnet-parent:3. The packaged
+# parent is 5, and nothing else pulls it into the build root.
+BuildRequires:	mvn(net.java:jvnet-parent:pom::)
 BuildSystem:	maven
 BuildOption(install):	--file-name %{name} --alias org.osgi:org.osgi.compendium
 
